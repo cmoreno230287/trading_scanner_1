@@ -1,0 +1,23 @@
+study(title="Tony's EMA Scalper - Buy / Sell", shorttitle="TUX EMA Scalper", overlay=true)
+len20 = input(20, minval=1, title="Length")
+len200 = input(200, minval=1, title="Length")
+
+src = input(close, title="Source")
+
+out20 = ema(src, len20)
+out200 = ema(src, len200)
+
+plot(out20, title="EMA", color=yellow, linewidth=2)
+plot(out200, title="EMA", color=purple, linewidth=2)
+
+last8h = highest(close, 8)
+lastl8 = lowest(close, 8)
+
+plot(last8h, color=red, linewidth=1)
+plot(lastl8, color=green, linewidth=1)
+
+bearish = cross(close,out20) == 1 and close[1] > close 
+bullish = cross(close,out20) == 1 and close[1] < close 
+
+plotshape(bearish, color=red, style=shape.arrowdown, text="", location=location.abovebar)
+plotshape(bullish, color=green, style=shape.arrowup, text="", location=location.belowbar)

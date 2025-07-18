@@ -1,0 +1,63 @@
+//@version=6
+strategy("Tradeando Entry Strategy BTCUSDT", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=100)
+
+// ————— INPUTS ————— //
+length = input.int(31, title="Volume MA Length", minval=1)
+takeProfitPerc = input.float(1.0, title="Take Profit %", minval=0.1)  // 1%
+stopLossPerc  = input.float(1.0, title="Stop Loss %", minval=0.1)    // 1%
+emaLength = input.int(200, title="EMA 1 Trend Filter Length")
+
+
+// ————— DATA ————— //
+vol_ma = ta.sma(volume, length)
+ema200 = ta.ema(close, emaLength)
+
+// ————— CONDITIONS ————— //
+// 1. Green Candle
+isGreen = close > open
+
+// 2. Lowest Low in 31 bars (including current)
+isLowestLow = low == ta.lowest(low, length)
+
+// 3. Current close > previous open
+isCloseHigher = close > open[1]
+
+// 4. Volume > previous 3 volumes
+isVolumeHigher = volume > volume[1] and volume > volume[2] and volume > volume[3]
+
+// 5. Volume > Volume MA
+isVolumeAboveMA = volume > vol_ma
+
+// 6. Trend filter: Only trade if above EMA200
+isUptrend = close > ema200
+
+// ————— COMBINED ENTRY CONDITION ————— //
+entrySignal = isGreen and isLowestLow and isCloseHigher and isVolumeHigher and isVolumeAboveMA //and isUptrend
+
+// ————— STRATEGY ENTRY ————— //
+if entrySignal
+    strategy.entry("Long", strategy.long)
+
+// ————— PLOT ENTRY ARROW ————— //
+plotshape(entrySignal, 
+     title="Entry Signal", 
+     location=location.belowbar, 
+     color=color.green, 
+     style=shape.triangleup, 
+     size=size.small, 
+     text="BUY")
+
+// ————— CALCULATE TP & SL LEVELS ————— //
+entryPrice = strategy.position_avg_price
+tpPrice = entryPrice * (1 + takeProfitPerc / 100)
+slPrice = entryPrice * (1 - stopLossPerc / 100)
+
+// ————— STRATEGY EXIT ————— //
+if strategy.position_size > 0
+    strategy.exit("Exit Long", from_entry="Long", limit=tpPrice, stop=slPrice)
+
+// ————— OPTIONAL: Plot Volume MA & EMA ————— //
+plot(vol_ma, title="Volume MA", color=color.orange, display=display.none)
+//plot(rsi, title="RSI", color=color.purple)
+//hline(30, "Oversold", color=color.red)
+
